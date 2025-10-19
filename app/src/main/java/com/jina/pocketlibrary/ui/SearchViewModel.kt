@@ -1,5 +1,6 @@
 package com.jina.pocketlibrary.ui
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jina.pocketlibrary.data.model.Book
@@ -9,9 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class SearchViewModel(private val repository: BookRepository): ViewModel() {
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+class SearchViewModel(
+    private val repository: BookRepository,
+    private val savedStateHandle: SavedStateHandle
+    ): ViewModel() {
+    private val _searchQuery = savedStateHandle.getStateFlow("search_query", "")
+    val searchQuery: StateFlow<String> = _searchQuery
 
     private val _searchResults = MutableStateFlow<List<Book>>(emptyList())
     val searchResults: StateFlow<List<Book>> = _searchResults.asStateFlow()
@@ -22,8 +26,13 @@ class SearchViewModel(private val repository: BookRepository): ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    init {
+        if (_searchQuery.value.isNotEmpty()) {
+            searchBook()
+        }
+    }
     fun updateQuery(query: String) {
-        _searchQuery.value = query
+        savedStateHandle["search_query"] = query
     }
 
     fun searchBook() {
@@ -50,6 +59,12 @@ class SearchViewModel(private val repository: BookRepository): ViewModel() {
     fun saveBook(book: Book) {
         viewModelScope.launch {
             repository.saveBook(book)
+        }
+    }
+
+    fun addBook(book: Book) {
+        viewModelScope.launch {
+
         }
     }
 }

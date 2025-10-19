@@ -1,5 +1,6 @@
 package com.jina.pocketlibrary.ui
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jina.pocketlibrary.data.model.Book
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class LibraryViewModel(private val repository: BookRepository) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
@@ -30,4 +32,19 @@ class LibraryViewModel(private val repository: BookRepository) : ViewModel() {
             initialValue = emptyList()
         )
 
+    fun updateQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun deleteBook(book: Book) {
+        viewModelScope.launch {
+            repository.deleteBook(book)
+        }
+    }
+    fun attachPhoto(book: Book, photoUri: Uri) {
+        viewModelScope.launch {
+            val updatedBook = book.copy(localPhotoPath = photoUri.toString())
+            repository.updateBook(updatedBook)
+        }
+    }
 }
