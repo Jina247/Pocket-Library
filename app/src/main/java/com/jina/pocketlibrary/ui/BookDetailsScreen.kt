@@ -1,7 +1,3 @@
-// ============================================
-// FILE: ui/BookDetailScreen.kt
-// ADD CAMERA & SHARE FEATURES
-// ============================================
 package com.jina.pocketlibrary.ui
 
 import android.Manifest
@@ -11,8 +7,11 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -35,8 +34,10 @@ import androidx.compose.ui.res.painterResource
 fun BookDetailScreen(
     book: Book,
     onPhotoTaken: (Uri) -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onNavigateBack: () -> Unit
 ) {
+    val listState: ScrollState = rememberScrollState()
     val context = LocalContext.current
 
     // Camera Permission
@@ -84,7 +85,7 @@ fun BookDetailScreen(
             TopAppBar(
                 title = { Text("Book Details") },
                 navigationIcon = {
-                    IconButton(onClick = { /* Navigate back */ }) {
+                    IconButton(onClick = { onNavigateBack }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
@@ -95,7 +96,8 @@ fun BookDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(listState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Book Cover

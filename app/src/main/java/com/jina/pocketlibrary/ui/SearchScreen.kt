@@ -4,9 +4,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -20,12 +17,21 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import com.jina.pocketlibrary.ui.components.BookGridLayout
+import com.jina.pocketlibrary.ui.components.BookListLayout
+import com.jina.pocketlibrary.ui.components.BookMasterDetailLayout
+import com.jina.pocketlibrary.ui.components.DeviceType
+import com.jina.pocketlibrary.ui.components.ErrorCard
+import com.jina.pocketlibrary.ui.components.rememberDeviceType
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,32 +43,75 @@ fun SearchScreen(
     val searchResults by viewModel.searchResults.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val listState = rememberLazyListState()
+
+    val savedBooks by viewModel.savedBooks.collectAsState()
+    val savedBookIds = remember(savedBooks) { savedBooks.map { it.id }.toSet() }
+
     var showManualEntryDialog by remember { mutableStateOf(false) }
+    val deviceType = rememberDeviceType()
+
+    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Search Books") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
+            when (deviceType) {
+                DeviceType.PHONE_LANDSCAPE -> {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "Search Books",
+                                style = MaterialTheme.typography.titleMedium, // smaller title
+                                maxLines = 1
+                            )
+                        },
+                        windowInsets = WindowInsets.statusBars, // reduces extra padding
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
+
+                DeviceType.PHONE_PORTRAIT -> {
+                    TopAppBar(
+                        title = { Text("Search Books") },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
+                DeviceType.TABLET_PORTRAIT -> {
+                    TopAppBar(
+                        title = { Text("Search Books") },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
+                DeviceType.TABLET_LANDSCAPE -> {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "Search Books",
+                                style = MaterialTheme.typography.titleMedium, // smaller title
+                                maxLines = 1
+                            )
+                        },
+                        windowInsets = WindowInsets.statusBars, // reduces extra padding
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
+            }
         },
         floatingActionButton = {
-            // FLOATING ACTION BUTTON - Bottom Right
             ExtendedFloatingActionButton(
                 onClick = { showManualEntryDialog = true },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add manually"
-                    )
-                },
-                text = { Text("Add Book") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Add Book") }
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -70,60 +119,62 @@ fun SearchScreen(
                 .padding(padding)
         ) {
             // Search Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.updateQuery(it) },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search books...") },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp)
-                )
-
-                Button(
-                    onClick = { viewModel.searchBook()},
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text("Search")
-                    }
-                }
-            }
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { viewModel.updateQuery(it) },
+                onSearch = { viewModel.searchBook() },
+                isLoading = isLoading
+            )
 
             // Error Message
             errorMessage?.let { msg ->
-                Text(
-                    text = msg,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                ErrorCard(msg)
             }
 
-            // Results
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(start = 16.dp,
-                    end = 16.dp,
-                    top = 16.dp,
-                    bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(searchResults, key = { it.id }) { book ->
-                    BookCard(
-                        book = book,
-                        onSaveClick = { viewModel.saveBook(book) },
-                        onDetailsClick = { onBookClick(book) }
+            // Results - ADAPTIVE LAYOUT
+            when (deviceType) {
+                DeviceType.PHONE_PORTRAIT -> {
+                    // Portrait: LazyColumn
+                    BookListLayout(
+                        books = searchResults,
+                        savedBookIds = savedBookIds,
+                        onSaveClick = { viewModel.saveBook(it) },
+                        onBookClick = onBookClick,
+                        listState = listState
+                    )
+                }
+
+                DeviceType.PHONE_LANDSCAPE -> {
+                    // Landscape: 2-column grid
+                    BookGridLayout(
+                        books = searchResults,
+                        savedBookIds = savedBookIds,
+                        onSaveClick = { viewModel.saveBook(it) },
+                        onBookClick = onBookClick,
+                        gridState = gridState,
+                        columns = 2
+                    )
+                }
+
+                DeviceType.TABLET_PORTRAIT -> {
+                    // Tablet Portrait: 2-column grid
+                    BookGridLayout(
+                        books = searchResults,
+                        savedBookIds = savedBookIds,
+                        onSaveClick = { viewModel.saveBook(it) },
+                        onBookClick = onBookClick,
+                        gridState = gridState,
+                        columns = 2
+                    )
+                }
+
+                DeviceType.TABLET_LANDSCAPE -> {
+                    // Tablet Landscape: Master-Detail Split
+                    BookMasterDetailLayout(
+                        books = searchResults,
+                        savedBookIds = savedBookIds,
+                        onSaveClick = { viewModel.saveBook(it) },
+                        listState = listState
                     )
                 }
             }
@@ -142,12 +193,50 @@ fun SearchScreen(
 }
 
 @Composable
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    isLoading: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text("Search books...") },
+            leadingIcon = { Icon(Icons.Default.Search, null) },
+            singleLine = true
+        )
+
+        Button(
+            onClick = onSearch,
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Search")
+            }
+        }
+    }
+}
+
+@Composable
 fun BookCard(
     book: Book,
     isSaved: Boolean = false,
     onSaveClick: (() -> Unit)? = null,
     onDeleteClick: (() -> Unit)? = null,
-    onDetailsClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null
 ) {
     // Animation state
     val scale by animateFloatAsState(
@@ -160,16 +249,14 @@ fun BookCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            // ✅ Make the whole card clickable
             .then(
-                if (onDetailsClick != null) {
-                    Modifier.clickable(onClick = onDetailsClick)
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
                 } else {
                     Modifier
                 }
             ),
-        elevation = CardDefaults.cardElevation(4.dp),
-
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -177,7 +264,7 @@ fun BookCard(
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Book Cover with fallback
+            // Book Cover
             Box(
                 modifier = Modifier
                     .size(width = 70.dp, height = 100.dp)
@@ -194,7 +281,6 @@ fun BookCard(
                         error = painterResource(android.R.drawable.ic_menu_gallery)
                     )
                 } else {
-                    // No image available
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.surfaceVariant
@@ -262,8 +348,7 @@ fun BookCard(
                     }
                 }
 
-                // Visual indicator that card is clickable
-                if (onDetailsClick != null) {
+                if (onClick != null) {
                     Text(
                         text = "Tap for details",
                         style = MaterialTheme.typography.labelSmall,
@@ -273,16 +358,11 @@ fun BookCard(
                 }
             }
 
-            // Action Buttons (Don't propagate click to card)
-            Column(
-                verticalArrangement = Arrangement.Center
-            ) {
+            // Action Button
+            Column(verticalArrangement = Arrangement.Center) {
                 when {
-                    // Library Screen - show delete button
                     onDeleteClick != null -> {
-                        IconButton(
-                            onClick = onDeleteClick
-                        ) {
+                        IconButton(onClick = onDeleteClick) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete",
@@ -290,12 +370,8 @@ fun BookCard(
                             )
                         }
                     }
-
-                    // Search Screen - show favorite button
                     onSaveClick != null -> {
-                        IconButton(
-                            onClick = onSaveClick
-                        ) {
+                        IconButton(onClick = onSaveClick) {
                             Icon(
                                 imageVector = if (isSaved)
                                     Icons.Filled.Favorite
@@ -331,16 +407,10 @@ fun ManualEntryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = {
-            Icon(Icons.Default.Add, contentDescription = null)
-        },
-        title = {
-            Text("Add Book Manually")
-        },
+        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+        title = { Text("Add Book Manually") },
         text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -362,7 +432,6 @@ fun ManualEntryDialog(
                 OutlinedTextField(
                     value = year,
                     onValueChange = {
-                        // Only allow numbers
                         if (it.isEmpty() || it.all { char -> char.isDigit() }) {
                             year = it
                         }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "8306651069",
+    "project_id": "pocket-library-992b4",
+    "storage_bucket": "pocket-library-992b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8306651069:android:51ade5134ba6995e8e6cd4",
+        "android_client_info": {
+          "package_name": "com.jina.pocketlibrary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANVEFECfJDHXhFnTxk9eQIrPR4jeaLv6k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

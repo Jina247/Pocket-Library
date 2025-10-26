@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.jina.pocketlibrary.data.model.Book
 import com.jina.pocketlibrary.data.repository.BookRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
@@ -26,6 +28,12 @@ class SearchViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    val savedBooks: StateFlow<List<Book>> = repository.getLocalBooks()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
     init {
         if (_searchQuery.value.isNotEmpty()) {
             searchBook()

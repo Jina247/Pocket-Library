@@ -21,9 +21,6 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(LibraryViewModel::class.java) -> {
                 LibraryViewModel(repository) as T
             }
-            modelClass.isAssignableFrom(BookDetailViewModel::class.java) -> {
-                BookDetailViewModel(repository) as T
-            }
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }
     }

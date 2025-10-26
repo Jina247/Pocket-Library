@@ -36,7 +36,7 @@ class BookRepository(
             val books = response.docs.mapNotNull { dto ->
                 if (dto.title != null && dto.key != null) {
                     Book(
-                        id = dto.key,
+                        id = dto.key.replace("/works/", "").replace("/", "_"),
                         title = dto.title,
                         author = dto.authorName?.firstOrNull() ?: "Unknown",
                         year = dto.firstPublishYear,

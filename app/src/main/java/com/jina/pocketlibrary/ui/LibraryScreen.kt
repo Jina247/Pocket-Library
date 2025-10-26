@@ -1,8 +1,8 @@
 package com.jina.pocketlibrary.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +11,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jina.pocketlibrary.data.model.Book
+import com.jina.pocketlibrary.ui.components.BookMasterDetailLayout
+import com.jina.pocketlibrary.ui.components.DeviceType
+import com.jina.pocketlibrary.ui.components.EmptyLibraryState
+import com.jina.pocketlibrary.ui.components.LibraryGridLayout
+import com.jina.pocketlibrary.ui.components.LibraryListLayout
+import com.jina.pocketlibrary.ui.components.LibraryMasterDetailLayout
+import com.jina.pocketlibrary.ui.components.rememberDeviceType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,6 +26,11 @@ fun LibraryScreen(
     onBookClick : (Book) -> Unit) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val savedBooks by viewModel.savedBooks.collectAsState()
+    val deviceType = rememberDeviceType()
+
+    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+    var selectedBook by remember { mutableStateOf<Book?>(null) }
 
     Scaffold(
         topBar = {
@@ -50,29 +62,46 @@ fun LibraryScreen(
 
             // Saved Books
             if (savedBooks.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    Text(
-                        text = if (searchQuery.isEmpty())
-                            "No books saved yet"
-                        else
-                            "No books found",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                EmptyLibraryState(searchQuery.isEmpty())
             } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(savedBooks, key = { it.id }) { book ->
-                        BookCard(
-                            book = book,
-                            onDeleteClick = { viewModel.deleteBook(book) },
-                            onDetailsClick = { onBookClick(book)}
+                when (deviceType) {
+                    DeviceType.PHONE_PORTRAIT -> {
+                        LibraryListLayout(
+                            books = savedBooks,
+                            onDeleteClick = { viewModel.deleteBook(it) },
+                            onBookClick = onBookClick,
+                            listState = listState
+                        )
+                    }
+
+                    DeviceType.PHONE_LANDSCAPE -> {
+                        LibraryGridLayout(
+                            books = savedBooks,
+                            onDeleteClick = { viewModel.deleteBook(it) },
+                            onBookClick = onBookClick,
+                            columns = 2,
+                            gridState = gridState
+                        )
+                    }
+
+                    DeviceType.TABLET_PORTRAIT -> {
+                        LibraryGridLayout(
+                            books = savedBooks,
+                            onDeleteClick = { viewModel.deleteBook(it) },
+                            onBookClick = onBookClick,
+                            columns = 2,
+                            gridState = gridState
+                        )
+                    }
+
+                    DeviceType.TABLET_LANDSCAPE -> {
+                        BookMasterDetailLayout(
+                            books = savedBooks,
+                            onDeleteClick = { viewModel.deleteBook(it) },
+                            onPhotoTaken = { book, uri -> viewModel.attachPhoto(book, uri) },
+                            selectedBook = selectedBook,
+                            onBookSelected = { selectedBook = it },
+                            listState = listState
                         )
                     }
                 }
