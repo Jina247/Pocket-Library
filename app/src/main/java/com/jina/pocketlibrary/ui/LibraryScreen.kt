@@ -1,5 +1,6 @@
 package com.jina.pocketlibrary.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -95,12 +96,10 @@ fun LibraryScreen(
                     }
 
                     DeviceType.TABLET_LANDSCAPE -> {
-                        BookMasterDetailLayout(
+                        LibraryMasterDetailLayout(
                             books = savedBooks,
                             onDeleteClick = { viewModel.deleteBook(it) },
                             onPhotoTaken = { book, uri -> viewModel.attachPhoto(book, uri) },
-                            selectedBook = selectedBook,
-                            onBookSelected = { selectedBook = it },
                             listState = listState
                         )
                     }

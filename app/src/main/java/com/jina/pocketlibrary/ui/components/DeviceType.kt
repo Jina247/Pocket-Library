@@ -104,6 +104,7 @@ fun BookMasterDetailLayout(
     onSaveClick: (Book) -> Unit,
     listState: LazyListState
 ) {
+    var selectedBook by remember { mutableStateOf<Book?>(null) }
     Row(Modifier.fillMaxSize()) {
         LazyColumn(state = listState,
             modifier = Modifier
@@ -139,7 +140,7 @@ fun BookMasterDetailLayout(
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.SpaceEvenly
                 ) {
                     androidx.compose.material.icons.Icons.Default.Menu
                     Spacer(Modifier.height(16.dp))
