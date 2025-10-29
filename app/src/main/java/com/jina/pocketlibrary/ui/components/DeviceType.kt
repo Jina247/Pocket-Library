@@ -1,5 +1,7 @@
 package com.jina.pocketlibrary.ui.components
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +11,8 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
@@ -16,19 +20,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.jina.pocketlibrary.data.model.Book
 import com.jina.pocketlibrary.ui.BookCard
 import com.jina.pocketlibrary.ui.BookDetailScreen
+import kotlin.math.min
 
 enum class DeviceType {
-    PHONE_PORTRAIT,        // Compact width, portrait
-    PHONE_LANDSCAPE,       // Compact width, landscape
-    TABLET_PORTRAIT,       // Medium/Expanded width, portrait
-    TABLET_LANDSCAPE       // Medium/Expanded width, landscape
+    PHONE_PORTRAIT,        // phone portrait
+    PHONE_LANDSCAPE,       // phone landscape
+    TABLET_PORTRAIT,       //tablet portrait
+    TABLET_LANDSCAPE       //tablet landscape
 }
-
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun rememberDeviceType(): DeviceType {
     val configuration = LocalConfiguration.current
@@ -36,11 +43,14 @@ fun rememberDeviceType(): DeviceType {
     val screenHeight = configuration.screenHeightDp
     val isLandscape = screenWidth > screenHeight
 
+    val smallestWidth = min(screenWidth, screenHeight)
+    val isTablet = smallestWidth >= 600
+
     return when {
-        screenWidth >= 600 && isLandscape -> DeviceType.TABLET_LANDSCAPE  // Split view
-        screenWidth >= 600 && !isLandscape -> DeviceType.TABLET_PORTRAIT // 2-col grid
-        isLandscape -> DeviceType.PHONE_LANDSCAPE                        // 2-col grid
-        else -> DeviceType.PHONE_PORTRAIT                                // Single column
+        isTablet && isLandscape -> DeviceType.TABLET_LANDSCAPE   // Split view
+        isTablet && !isLandscape -> DeviceType.TABLET_PORTRAIT   // 2-col grid
+        isLandscape -> DeviceType.PHONE_LANDSCAPE                // 2-col grid
+        else -> DeviceType.PHONE_PORTRAIT                        // Single column
     }
 }
 
@@ -69,7 +79,7 @@ fun BookListLayout(
     }
 }
 
-// 2) LANDSCAPE - LazyVerticalGrid
+// LANDSCAPE - LazyVerticalGrid
 @Composable
 fun BookGridLayout(
     books: List<Book>,
@@ -96,7 +106,7 @@ fun BookGridLayout(
     }
 }
 
-// 3) TABLET - Master-Detail Split
+// TABLET - Master-Detail Split
 @Composable
 fun BookMasterDetailLayout(
     books: List<Book>,
@@ -104,6 +114,7 @@ fun BookMasterDetailLayout(
     onSaveClick: (Book) -> Unit,
     listState: LazyListState
 ) {
+    val scrollState: ScrollState = rememberScrollState()
     var selectedBook by remember { mutableStateOf<Book?>(null) }
     Row(Modifier.fillMaxSize()) {
         LazyColumn(state = listState,
@@ -132,9 +143,10 @@ fun BookMasterDetailLayout(
                 .weight(2f)
                 .fillMaxHeight()
                 .padding(16.dp)
+                .verticalScroll(scrollState)
         ) {
             if (selectedBook != null) {
-                BookDetailContent(book = selectedBook!!)
+               BookDetailContent(book = selectedBook!!)
             } else {
                 // Empty state
                 Column(
@@ -156,11 +168,7 @@ fun BookMasterDetailLayout(
 }
 
 
-// ============================================
-// LAYOUT COMPONENTS - LIBRARY
-// ============================================
-
-// 1) PORTRAIT - LazyColumn
+// PORTRAIT - LazyColumn
 @Composable
 fun LibraryListLayout(
     books: List<Book>,
@@ -182,7 +190,7 @@ fun LibraryListLayout(
     }
 }
 
-// 2) LANDSCAPE - LazyVerticalGrid
+// LANDSCAPE - LazyVerticalGrid
 @Composable
 fun LibraryGridLayout(
     books: List<Book>,
@@ -207,7 +215,7 @@ fun LibraryGridLayout(
     }
 }
 
-// 3) TABLET - Master-Detail Split
+// TABLET - Master-Detail Split
 @Composable
 fun LibraryMasterDetailLayout(
     books: List<Book>,
@@ -215,6 +223,7 @@ fun LibraryMasterDetailLayout(
     onPhotoTaken: (Book, android.net.Uri) -> Unit,
     listState: LazyListState
 ) {
+    val scroll: ScrollState = rememberScrollState()
     var selectedBook by remember { mutableStateOf<Book?>(null) }
     Row(Modifier.fillMaxSize()) {
         // Master - List
@@ -234,10 +243,9 @@ fun LibraryMasterDetailLayout(
             }
         }
 
-        // Divider
         VerticalDivider()
 
-        // Detail - Full Detail Screen
+        // Detail -  Detail Screen
         Box(
             modifier = Modifier
                 .weight(2f)
@@ -249,12 +257,13 @@ fun LibraryMasterDetailLayout(
                     onPhotoTaken = { uri ->
                         onPhotoTaken(selectedBook!!, uri)
                     },
-                    onShare = { /* Handle share */ },
                     onNavigateBack = { }
                 )
             } else {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scroll),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
@@ -270,10 +279,6 @@ fun LibraryMasterDetailLayout(
         }
     }
 }
-
-// ============================================
-// HELPER COMPONENTS
-// ============================================
 
 @Composable
 fun ErrorCard(message: String) {
@@ -319,13 +324,19 @@ fun EmptyLibraryState(isEmptySearch: Boolean) {
 
 @Composable
 fun BookDetailContent(book: Book) {
-    // Simple detail view for tablet master-detail
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        AsyncImage(
+            model = book.localPhotoPath ?: book.coverUrl,
+            contentDescription = book.title,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
         Text(
             text = book.title,
             style = MaterialTheme.typography.headlineMedium

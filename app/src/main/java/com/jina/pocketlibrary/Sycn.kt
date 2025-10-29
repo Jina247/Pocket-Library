@@ -5,6 +5,7 @@ import androidx.work.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jina.pocketlibrary.data.local.BookDatabase
 import com.jina.pocketlibrary.data.model.toDomain
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
 
@@ -18,21 +19,18 @@ class SyncWorker(
             val database = BookDatabase.getDatabase(applicationContext)
             val firestore = FirebaseFirestore.getInstance()
 
-            // Get all local books
-            val localBooks = database.bookDao().getAllBooks()
-
-            // This is a Flow, so we need to collect it once
-            var booksList = emptyList<com.jina.pocketlibrary.data.model.Book>()
-            localBooks.collect { entities ->
-                booksList = entities.map { it.toDomain() }
-            }
+            val localBooks = database.bookDao().getAllBooks().first()
+            val booksList = localBooks.map { it.toDomain() }
 
             // Upload each book to Firebase
             booksList.forEach { book ->
-                firestore.collection("books")
-                    .document(book.id)
-                    .set(book)
-                    .await()
+                try {
+                    firestore.collection("books")
+                        .document(book.id)
+                        .set(book)
+                        .await()
+                } catch (e: Exception) {
+                }
             }
 
             Result.success()
@@ -48,7 +46,7 @@ class SyncWorker(
                 .build()
 
             val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-                15, TimeUnit.MINUTES
+                15, TimeUnit.MINUTES  // Minimum is 15 minutes for PeriodicWork
             )
                 .setConstraints(constraints)
                 .build()

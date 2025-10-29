@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.jina.pocketlibrary"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.jina.pocketlibrary"

@@ -9,10 +9,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.jina.pocketlibrary" />
-                  <option name="mobileSdkAppId" value="1:8306651069:android:51ade5134ba6995e8e6cd4" />
-                  <option name="projectId" value="pocket-library-992b4" />
-                  <option name="projectNumber" value="8306651069" />
+                  <option name="appId" value="PLACEHOLDER" />
+                  <option name="mobileSdkAppId" value="" />
+                  <option name="projectId" value="" />
+                  <option name="projectNumber" value="" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

@@ -26,7 +26,6 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.jina.pocketlibrary.data.model.Book
 import java.io.File
-import androidx.compose.ui.res.painterResource
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +33,6 @@ import androidx.compose.ui.res.painterResource
 fun BookDetailScreen(
     book: Book,
     onPhotoTaken: (Uri) -> Unit,
-    onShare: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val listState: ScrollState = rememberScrollState()
@@ -57,7 +55,7 @@ fun BookDetailScreen(
     val photoUri = remember {
         FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
+            "${context.packageName}.file provider",
             photoFile
         )
     }
@@ -85,7 +83,7 @@ fun BookDetailScreen(
             TopAppBar(
                 title = { Text("Book Details") },
                 navigationIcon = {
-                    IconButton(onClick = { onNavigateBack }) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
@@ -134,13 +132,12 @@ fun BookDetailScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Camera Button
-                Button(
+                OutlinedButton(
                     onClick = {
                         when {
                             ContextCompat.checkSelfPermission(
@@ -157,13 +154,15 @@ fun BookDetailScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
-                        painter = painterResource(id = com.jina.pocketlibrary.R.drawable.baseline_photo_camera_24),
+                        imageVector = Icons.Default.Add,
                         contentDescription = "Take photo"
                     )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Photo")
                 }
 
                 // Share Button
-                Button(
+                OutlinedButton(
                     onClick = { contactPickerLauncher.launch(null) },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -194,9 +193,9 @@ fun shareBookViaContact(context: android.content.Context, book: Book, contactUri
     val shareText = """
         Check out this book!
         
-        📚 ${book.title}
-        ✍️ by ${book.author}
-        📅 ${book.year ?: "Unknown year"}
+        ${book.title}
+        by ${book.author}
+        ${book.year ?: "Unknown year"}
         
         Shared via Pocket Library
     """.trimIndent()

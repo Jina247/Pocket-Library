@@ -6,7 +6,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-
 data class BookSearchResponse(
     @SerializedName("docs") val docs: List<BookDto>
 )

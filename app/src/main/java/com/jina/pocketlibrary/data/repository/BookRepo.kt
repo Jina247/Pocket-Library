@@ -34,11 +34,11 @@ class BookRepository(
         return try {
             val response = api.searchBooks(query)
             val books = response.docs.mapNotNull { dto ->
-                if (dto.title != null && dto.key != null) {
+                if (dto.key != null) {
                     Book(
                         id = dto.key.replace("/works/", "").replace("/", "_"),
                         title = dto.title,
-                        author = dto.authorName?.firstOrNull() ?: "Unknown",
+                        author = dto.authorName.firstOrNull() ?: "Unknown",
                         year = dto.firstPublishYear,
                         coverUrl = dto.coverId?.let {
                             "https://covers.openlibrary.org/b/id/$it-M.jpg"
@@ -70,6 +70,25 @@ class BookRepository(
         syncToFirebase(book)
     }
 
+    suspend fun syncFromFirebase(): Result<Int> {
+        return try {
+            val syncedBook = fetchFromFirebase()
+            var count: Int = 0
+
+            syncedBook.forEach { book ->
+                val existingBook = bookDao.getBookById(book.id)
+                if (existingBook == null) {
+                    bookDao.insertBook(book.toEntity())
+                    count++
+                }
+
+            }
+            Result.success(count)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // Firebase sync
     private suspend fun syncToFirebase(book: Book) {
         try {
@@ -77,8 +96,8 @@ class BookRepository(
                 .document(book.id)
                 .set(book)
                 .await()
-        } catch (e: Exception) {
-            // Silent fail - offline
+        } catch (_: Exception) {
+
         }
     }
 
@@ -88,8 +107,8 @@ class BookRepository(
                 .document(book.id)
                 .delete()
                 .await()
-        } catch (e: Exception) {
-            // Silent fail
+        } catch (_: Exception) {
+
         }
     }
 
@@ -98,7 +117,7 @@ class BookRepository(
         return try {
             val snapshot = firestore.collection("books").get().await()
             snapshot.documents.mapNotNull { it.toObject(Book::class.java) }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }
